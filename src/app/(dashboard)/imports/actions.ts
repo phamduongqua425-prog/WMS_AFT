@@ -19,6 +19,8 @@ export async function createImport(formData: FormData) {
     throw new Error('Thiếu thông tin nhập kho')
   }
 
+  const session_id = crypto.randomUUID()
+
   // Insert từng movement — trigger DB sẽ tự cập nhật bảng stock
   const movements = items.map(item => ({
     branch_id,
@@ -28,6 +30,7 @@ export async function createImport(formData: FormData) {
     expiry_date: item.expiry_date || null,
     batch_code: item.batch_code || null,
     note: note || null,
+    session_id,
   }))
 
   const { error } = await supabase.from('stock_movements').insert(movements)
