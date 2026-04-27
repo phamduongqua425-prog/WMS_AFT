@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import Link from 'next/link'
+import { ChevronRight } from 'lucide-react'
 
 export default async function StocktakesPage() {
   const supabase = await createClient()
@@ -37,11 +38,12 @@ export default async function StocktakesPage() {
               <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Trạng thái</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Ghi chú</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Nộp lúc</th>
+              <th className="w-10"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
             {stocktakes && stocktakes.length > 0 ? stocktakes.map((s: any) => (
-              <tr key={s.id} className="hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => window.location.href = `/stocktakes/${s.id}`}>
+              <tr key={s.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-4 py-3 text-gray-700 whitespace-nowrap">
                   {format(new Date(s.date), 'dd/MM/yyyy', { locale: vi })}
                 </td>
@@ -55,10 +57,15 @@ export default async function StocktakesPage() {
                 <td className="px-4 py-3 text-gray-400">
                   {s.submitted_at ? format(new Date(s.submitted_at), 'dd/MM HH:mm', { locale: vi }) : '—'}
                 </td>
+                <td className="px-4 py-3">
+                  <Link href={`/stocktakes/${s.id}`} className="text-gray-300 hover:text-emerald-600 transition-colors">
+                    <ChevronRight size={16} />
+                  </Link>
+                </td>
               </tr>
             )) : (
               <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-gray-400">
+                <td colSpan={6} className="px-4 py-10 text-center text-gray-400">
                   Chưa có kiểm kê nào
                 </td>
               </tr>
