@@ -1,6 +1,9 @@
+export const dynamic = 'force-dynamic'
+
 import { createClient } from '@/lib/supabase/server'
-import { Badge } from '@/components/ui/badge'
 import { Store, Warehouse, Phone, User } from 'lucide-react'
+import { AddBranchButton, EditBranchButton } from './branch-form'
+import { ToggleActiveButton } from './toggle-active-button'
 
 export default async function BranchesPage() {
   const supabase = await createClient()
@@ -20,19 +23,22 @@ export default async function BranchesPage() {
           <h1 className="text-xl font-semibold text-gray-900">Điểm bán & Kho</h1>
           <p className="text-sm text-gray-500 mt-0.5">{branches?.length ?? 0} địa điểm</p>
         </div>
+        <AddBranchButton />
       </div>
 
       {/* Kho */}
-      <section>
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-          <Warehouse size={14} /> Kho trung tâm
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {warehouses.map(b => (
-            <BranchCard key={b.id} branch={b} />
-          ))}
-        </div>
-      </section>
+      {warehouses.length > 0 && (
+        <section>
+          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+            <Warehouse size={14} /> Kho trung tâm
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {warehouses.map(b => (
+              <BranchCard key={b.id} branch={b} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Điểm bán */}
       <section>
@@ -51,15 +57,16 @@ export default async function BranchesPage() {
 
 function BranchCard({ branch }: { branch: any }) {
   return (
-    <div className={`bg-white rounded-xl border p-4 space-y-3 ${!branch.is_active ? 'opacity-50 border-gray-100' : 'border-gray-200'}`}>
+    <div className={`bg-white rounded-xl border p-4 space-y-3 ${!branch.is_active ? 'opacity-60 border-gray-100' : 'border-gray-200'}`}>
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-gray-900 truncate">{branch.name}</p>
           <p className="text-xs text-gray-400 font-mono mt-0.5">{branch.code}</p>
         </div>
-        <Badge variant={branch.is_active ? 'default' : 'secondary'} className="shrink-0 text-xs">
-          {branch.is_active ? 'Hoạt động' : 'Ngưng'}
-        </Badge>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <ToggleActiveButton id={branch.id} isActive={branch.is_active} />
+          <EditBranchButton branch={branch} />
+        </div>
       </div>
 
       {branch.address && (
