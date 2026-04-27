@@ -10,7 +10,7 @@ export async function createTransfer(formData: FormData) {
   const from_branch_id = formData.get('from_branch_id') as string
   const to_branch_id = formData.get('to_branch_id') as string
   const note = formData.get('note') as string
-  const items: { product_id: string; quantity: number }[] = JSON.parse(formData.get('items') as string)
+  const items: { product_id: string; quantity: number; expiry_date: string | null }[] = JSON.parse(formData.get('items') as string)
 
   if (!from_branch_id || !to_branch_id || from_branch_id === to_branch_id) {
     throw new Error('Điểm xuất và điểm nhận phải khác nhau')
@@ -29,7 +29,12 @@ export async function createTransfer(formData: FormData) {
   // Tạo các dòng sản phẩm
   const { error: itemsErr } = await supabase
     .from('transfer_order_items')
-    .insert(items.map(i => ({ transfer_order_id: order.id, product_id: i.product_id, quantity: i.quantity })))
+    .insert(items.map(i => ({
+      transfer_order_id: order.id,
+      product_id: i.product_id,
+      quantity: i.quantity,
+      expiry_date: i.expiry_date || null,
+    })))
 
   if (itemsErr) throw new Error(itemsErr.message)
 

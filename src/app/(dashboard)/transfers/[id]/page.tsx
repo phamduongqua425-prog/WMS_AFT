@@ -101,6 +101,7 @@ export default async function TransferDetailPage({ params }: { params: Promise<{
           <thead>
             <tr className="border-b border-gray-100">
               <th className="text-left pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Sản phẩm</th>
+              <th className="text-left pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider w-32">HSD</th>
               <th className="text-right pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider w-28">Số lượng</th>
             </tr>
           </thead>
@@ -109,6 +110,15 @@ export default async function TransferDetailPage({ params }: { params: Promise<{
               <tr key={item.id} className="border-b border-gray-50 last:border-0">
                 <td className="py-3">
                   <p className="font-medium text-gray-800">{item.product?.name}</p>
+                </td>
+                <td className="py-3">
+                  {item.expiry_date ? (
+                    <span className="text-sm text-gray-700">
+                      {format(new Date(item.expiry_date), 'dd/MM/yyyy')}
+                    </span>
+                  ) : (
+                    <span className="text-sm text-gray-300">—</span>
+                  )}
                 </td>
                 <td className="py-3 text-right">
                   <span className="font-semibold text-gray-800">{item.quantity}</span>

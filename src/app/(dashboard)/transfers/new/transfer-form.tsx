@@ -10,6 +10,7 @@ interface LineItem {
   id: number
   product_id: string
   quantity: string
+  expiry_date: string
 }
 
 let lineId = 0
@@ -22,13 +23,13 @@ export function TransferForm({ branches, products }: { branches: Branch[]; produ
   const [toBranchId, setToBranchId] = useState('')
   const [note, setNote] = useState('')
   const [items, setItems] = useState<LineItem[]>([
-    { id: ++lineId, product_id: '', quantity: '' },
+    { id: ++lineId, product_id: '', quantity: '', expiry_date: '' },
   ])
 
   const activeBranches = branches.filter(b => b.is_active)
 
   function addRow() {
-    setItems(p => [...p, { id: ++lineId, product_id: '', quantity: '' }])
+    setItems(p => [...p, { id: ++lineId, product_id: '', quantity: '', expiry_date: '' }])
   }
   function removeRow(id: number) {
     setItems(p => p.filter(r => r.id !== id))
@@ -54,6 +55,7 @@ export function TransferForm({ branches, products }: { branches: Branch[]; produ
     fd.append('items', JSON.stringify(validItems.map(i => ({
       product_id: i.product_id,
       quantity: Number(i.quantity),
+      expiry_date: i.expiry_date || null,
     }))))
 
     startTransition(async () => {
@@ -149,7 +151,8 @@ export function TransferForm({ branches, products }: { branches: Branch[]; produ
             <thead>
               <tr className="border-b border-gray-100">
                 <th className="text-left pb-2 pr-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Sản phẩm *</th>
-                <th className="text-left pb-2 pr-3 text-xs font-semibold text-gray-500 uppercase tracking-wider w-36">Số lượng *</th>
+                <th className="text-left pb-2 pr-3 text-xs font-semibold text-gray-500 uppercase tracking-wider w-32">Số lượng *</th>
+                <th className="text-left pb-2 pr-3 text-xs font-semibold text-gray-500 uppercase tracking-wider w-36">HSD</th>
                 <th className="pb-2 w-10"></th>
               </tr>
             </thead>
@@ -175,6 +178,11 @@ export function TransferForm({ branches, products }: { branches: Branch[]; produ
                           className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
                         {product && <span className="text-xs text-gray-400 shrink-0">{product.unit}</span>}
                       </div>
+                    </td>
+                    <td className="py-2 pr-3">
+                      <input type="date" value={item.expiry_date}
+                        onChange={e => updateRow(item.id, 'expiry_date', e.target.value)}
+                        className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
                     </td>
                     <td className="py-2">
                       {items.length > 1 && (
