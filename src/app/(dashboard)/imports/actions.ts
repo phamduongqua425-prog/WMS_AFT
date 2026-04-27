@@ -9,19 +9,12 @@ export async function createImport(formData: FormData) {
 
   const branch_id = formData.get('branch_id') as string
   const note = formData.get('note') as string
-
-  // Parse line items từ JSON string
-  const itemsRaw = formData.get('items') as string
   const items: { product_id: string; quantity: number; expiry_date: string; batch_code: string }[] =
-    JSON.parse(itemsRaw)
+    JSON.parse(formData.get('items') as string)
 
-  if (!branch_id || items.length === 0) {
-    throw new Error('Thiếu thông tin nhập kho')
-  }
+  if (!branch_id || items.length === 0) throw new Error('Thiếu thông tin nhập kho')
 
   const session_id = crypto.randomUUID()
-
-  // Insert từng movement — trigger DB sẽ tự cập nhật bảng stock
   const movements = items.map(item => ({
     branch_id,
     product_id: item.product_id,
@@ -34,6 +27,46 @@ export async function createImport(formData: FormData) {
   }))
 
   const { error } = await supabase.from('stock_movements').insert(movements)
+  if (error) throw new Error(error.message)
+
+  revalidatePath('/imports')
+  revalidatePath('/stock')
+  revalidatePath('/dashboard')
+  redirect('/imports')
+}
+
+export async function updateImportNote(sessionId: string, note: string) {
+  const supabase = createAdminClient()
+  const { error } = await supabase
+    .from('stock_movements')
+    .update({ note: note || null })
+    .eq('session_id', sessionId)
+  if (error) throw new Error(error.message)
+  revalidatePath('/imports')
+  revalidatePath(`/imports/${sessionId}`)
+}
+
+export async function deleteImportSession(sessionId: string) {
+  const supabase = createAdminClient()
+
+  const { data: movements, error: fetchErr } = await supabase
+    .from('stock_movements')
+    .select('branch_id, product_id, quantity')
+    .eq('session_id', sessionId)
+    .eq('type', 'import')
+  if (fetchErr) throw new Error(fetchErr.message)
+  if (!movements || movements.length === 0) throw new Error('Không tìm thấy phiếu')
+
+  // Reverse: import added to stock, so reverting subtracts
+  for (const m of movements) {
+    await supabase.rpc('adjust_stock', {
+      p_branch_id: m.branch_id,
+      p_product_id: m.product_id,
+      p_delta: -m.quantity,
+    })
+  }
+
+  const { error } = await supabase.from('stock_movements').delete().eq('session_id', sessionId)
   if (error) throw new Error(error.message)
 
   revalidatePath('/imports')
