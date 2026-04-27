@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { createClient } from '@/lib/supabase/server'
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'

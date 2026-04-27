@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { createClient } from '@/lib/supabase/server'
 import { Package, AlertTriangle, ArrowLeftRight, Store } from 'lucide-react'
 import { format } from 'date-fns'
