@@ -40,15 +40,56 @@ export async function createExport(formData: FormData) {
   redirect('/exports')
 }
 
-export async function updateExportNote(sessionId: string, note: string) {
+export async function updateExportSession(
+  sessionId: string,
+  formData: FormData
+) {
   const supabase = createAdminClient()
-  const { error } = await supabase
+
+  const branch_id = formData.get('branch_id') as string
+  const type = formData.get('type') as string
+  const note = formData.get('note') as string
+  const items: { product_id: string; quantity: number; note: string }[] =
+    JSON.parse(formData.get('items') as string)
+
+  if (!branch_id) throw new Error('Vui lòng chọn điểm bán')
+  if (!EXPORT_TYPES.includes(type)) throw new Error('Loại xuất không hợp lệ')
+  if (items.length === 0) throw new Error('Vui lòng thêm ít nhất 1 sản phẩm')
+
+  // Reverse stock for existing movements
+  const { data: old } = await supabase
     .from('stock_movements')
-    .update({ note: note || null })
+    .select('branch_id, product_id, quantity')
     .eq('session_id', sessionId)
+    .in('type', EXPORT_TYPES)
+
+  for (const m of old ?? []) {
+    await supabase.rpc('adjust_stock', {
+      p_branch_id: m.branch_id,
+      p_product_id: m.product_id,
+      p_delta: m.quantity, // exports subtract from stock, reverting adds back
+    })
+  }
+
+  // Delete old movements
+  await supabase.from('stock_movements').delete().eq('session_id', sessionId)
+
+  // Insert updated movements (keep same session_id)
+  const { error } = await supabase.from('stock_movements').insert(
+    items.map(i => ({
+      branch_id,
+      product_id: i.product_id,
+      type,
+      quantity: i.quantity,
+      note: i.note || note || null,
+      session_id: sessionId,
+    }))
+  )
   if (error) throw new Error(error.message)
+
   revalidatePath('/exports')
-  revalidatePath(`/exports/${sessionId}`)
+  revalidatePath('/stock')
+  redirect(`/exports/${sessionId}`)
 }
 
 export async function deleteExportSession(sessionId: string) {

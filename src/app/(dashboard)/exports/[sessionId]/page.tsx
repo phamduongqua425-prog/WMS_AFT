@@ -80,7 +80,7 @@ export default async function ExportDetailPage({ params }: { params: Promise<{ s
         </div>
       </div>
 
-      <ExportSessionActions sessionId={sessionId} note={first.note} />
+      <ExportSessionActions sessionId={sessionId} />
 
       {first.note && (
         <div className="bg-gray-50 rounded-lg px-4 py-3 text-sm text-gray-600">

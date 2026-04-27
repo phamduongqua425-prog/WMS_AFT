@@ -1,0 +1,221 @@
+'use client'
+
+import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
+import { updateImportSession } from '../../actions'
+import { Plus, Trash2, Loader2, AlertCircle } from 'lucide-react'
+
+interface LineItem {
+  id: number
+  product_id: string
+  quantity: string
+  expiry_date: string
+  batch_code: string
+}
+
+let lineId = 0
+
+export function EditImportForm({
+  sessionId,
+  branches,
+  products,
+  initialBranchId,
+  initialNote,
+  initialItems,
+}: {
+  sessionId: string
+  branches: any[]
+  products: any[]
+  initialBranchId: string
+  initialNote: string
+  initialItems: { product_id: string; quantity: string; expiry_date: string; batch_code: string }[]
+}) {
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
+  const [error, setError] = useState<string | null>(null)
+  const [branchId, setBranchId] = useState(initialBranchId)
+  const [note, setNote] = useState(initialNote)
+  const [items, setItems] = useState<LineItem[]>(
+    initialItems.map(i => ({ ...i, id: ++lineId }))
+  )
+
+  function addRow() {
+    setItems(p => [...p, { id: ++lineId, product_id: '', quantity: '', expiry_date: '', batch_code: '' }])
+  }
+  function removeRow(id: number) {
+    setItems(p => p.filter(r => r.id !== id))
+  }
+  function updateRow(id: number, field: keyof LineItem, value: string) {
+    setItems(p => p.map(r => r.id === id ? { ...r, [field]: value } : r))
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setError(null)
+    if (!branchId) { setError('Vui lòng chọn kho nhập'); return }
+    const validItems = items.filter(i => i.product_id && Number(i.quantity) > 0)
+    if (validItems.length === 0) { setError('Vui lòng thêm ít nhất 1 sản phẩm với số lượng hợp lệ'); return }
+
+    const fd = new FormData()
+    fd.append('branch_id', branchId)
+    fd.append('note', note)
+    fd.append('items', JSON.stringify(validItems.map(i => ({
+      product_id: i.product_id,
+      quantity: Number(i.quantity),
+      expiry_date: i.expiry_date,
+      batch_code: i.batch_code,
+    }))))
+
+    startTransition(async () => {
+      try {
+        await updateImportSession(sessionId, fd)
+      } catch (err: any) {
+        setError(err.message ?? 'Có lỗi xảy ra')
+      }
+    })
+  }
+
+  const activeBranches = branches.filter(b => b.is_active)
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {error && (
+        <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
+          <AlertCircle size={16} className="shrink-0" /> {error}
+        </div>
+      )}
+
+      <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+        <h2 className="font-semibold text-gray-900">Thông tin phiếu nhập</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-gray-700">Điểm nhập hàng <span className="text-red-500">*</span></label>
+            <select
+              value={branchId}
+              onChange={e => setBranchId(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            >
+              <optgroup label="Kho trung tâm">
+                {activeBranches.filter(b => b.type === 'warehouse').map(b => (
+                  <option key={b.id} value={b.id}>{b.name}</option>
+                ))}
+              </optgroup>
+              <optgroup label="Điểm bán">
+                {activeBranches.filter(b => b.type === 'store').map(b => (
+                  <option key={b.id} value={b.id}>{b.name}</option>
+                ))}
+              </optgroup>
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-gray-700">Ghi chú</label>
+            <input
+              type="text"
+              value={note}
+              onChange={e => setNote(e.target.value)}
+              placeholder="VD: Nhập từ nhà cung cấp X..."
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold text-gray-900">Sản phẩm nhập</h2>
+          <button type="button" onClick={addRow} className="flex items-center gap-1.5 text-sm text-emerald-700 font-medium hover:text-emerald-800">
+            <Plus size={16} /> Thêm dòng
+          </button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-100">
+                <th className="text-left pb-2 pr-3 text-xs font-semibold text-gray-500 uppercase tracking-wider w-64">Sản phẩm *</th>
+                <th className="text-left pb-2 pr-3 text-xs font-semibold text-gray-500 uppercase tracking-wider w-28">Số lượng *</th>
+                <th className="text-left pb-2 pr-3 text-xs font-semibold text-gray-500 uppercase tracking-wider w-36">Hạn sử dụng</th>
+                <th className="text-left pb-2 pr-3 text-xs font-semibold text-gray-500 uppercase tracking-wider w-32">Số lô</th>
+                <th className="pb-2 w-10"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map(item => {
+                const product = products.find(p => p.id === item.product_id)
+                return (
+                  <tr key={item.id} className="border-b border-gray-50">
+                    <td className="py-2 pr-3">
+                      <select
+                        value={item.product_id}
+                        onChange={e => updateRow(item.id, 'product_id', e.target.value)}
+                        className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      >
+                        <option value="">-- Chọn sản phẩm --</option>
+                        {products.map(p => (
+                          <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="py-2 pr-3">
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="number"
+                          min="1"
+                          value={item.quantity}
+                          onChange={e => updateRow(item.id, 'quantity', e.target.value)}
+                          className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        />
+                        {product && <span className="text-xs text-gray-400 shrink-0">{product.unit}</span>}
+                      </div>
+                    </td>
+                    <td className="py-2 pr-3">
+                      <input
+                        type="date"
+                        value={item.expiry_date}
+                        onChange={e => updateRow(item.id, 'expiry_date', e.target.value)}
+                        className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      />
+                    </td>
+                    <td className="py-2 pr-3">
+                      <input
+                        type="text"
+                        value={item.batch_code}
+                        onChange={e => updateRow(item.id, 'batch_code', e.target.value)}
+                        placeholder="VD: LOT2024..."
+                        className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      />
+                    </td>
+                    <td className="py-2">
+                      {items.length > 1 && (
+                        <button type="button" onClick={() => removeRow(item.id)} className="text-gray-300 hover:text-red-500 transition-colors">
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-end gap-3">
+        <button
+          type="button"
+          onClick={() => router.back()}
+          className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+        >
+          Huỷ
+        </button>
+        <button
+          type="submit"
+          disabled={isPending}
+          className="flex items-center gap-2 px-5 py-2 text-sm font-medium bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-60 transition-colors"
+        >
+          {isPending && <Loader2 size={14} className="animate-spin" />}
+          {isPending ? 'Đang lưu...' : 'Lưu thay đổi'}
+        </button>
+      </div>
+    </form>
+  )
+}

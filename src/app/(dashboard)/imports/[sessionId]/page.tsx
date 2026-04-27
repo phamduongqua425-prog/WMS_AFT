@@ -69,7 +69,7 @@ export default async function ImportDetailPage({ params }: { params: Promise<{ s
         </div>
       </div>
 
-      <ImportSessionActions sessionId={sessionId} note={first.note} />
+      <ImportSessionActions sessionId={sessionId} />
 
       {first.note && (
         <div className="bg-gray-50 rounded-lg px-4 py-3 text-sm text-gray-600">
