@@ -3,7 +3,8 @@ export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, ChevronRight } from 'lucide-react'
+import Link from 'next/link'
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   pending:       { label: 'Chờ xử lý',    color: 'bg-amber-100 text-amber-700' },
@@ -45,7 +46,7 @@ export default async function TransfersPage() {
         {transfers && transfers.length > 0 ? transfers.map((t: any) => {
           const cfg = STATUS_CONFIG[t.status] ?? STATUS_CONFIG.pending
           return (
-            <div key={t.id} className="bg-white rounded-xl border border-gray-200 p-4">
+            <Link key={t.id} href={`/transfers/${t.id}`} className="block bg-white rounded-xl border border-gray-200 p-4 hover:border-emerald-300 hover:shadow-sm transition-all">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
@@ -76,13 +77,14 @@ export default async function TransfersPage() {
                   )}
                 </div>
 
-                <div className="text-right shrink-0">
+                <div className="text-right shrink-0 flex flex-col items-end gap-2">
                   <p className="text-xs text-gray-400">
                     {format(new Date(t.requested_at), 'dd/MM/yyyy HH:mm', { locale: vi })}
                   </p>
+                  <ChevronRight size={16} className="text-gray-300" />
                 </div>
               </div>
-            </div>
+            </Link>
           )
         }) : (
           <div className="bg-white rounded-xl border border-gray-100 p-10 text-center">
