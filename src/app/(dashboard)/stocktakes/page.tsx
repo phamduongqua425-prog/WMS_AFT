@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
+import Link from 'next/link'
 
 export default async function StocktakesPage() {
   const supabase = await createClient()
@@ -40,7 +41,7 @@ export default async function StocktakesPage() {
           </thead>
           <tbody className="divide-y divide-gray-50">
             {stocktakes && stocktakes.length > 0 ? stocktakes.map((s: any) => (
-              <tr key={s.id} className="hover:bg-gray-50 transition-colors">
+              <tr key={s.id} className="hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => window.location.href = `/stocktakes/${s.id}`}>
                 <td className="px-4 py-3 text-gray-700 whitespace-nowrap">
                   {format(new Date(s.date), 'dd/MM/yyyy', { locale: vi })}
                 </td>
