@@ -7,6 +7,7 @@ import { vi } from 'date-fns/locale'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import { TransferActions } from './transfer-actions'
+import { DeleteTransferButton } from './delete-button'
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; description: string }> = {
   pending:       { label: 'Chờ xử lý',    color: 'bg-amber-100 text-amber-700',    description: 'Phiếu mới tạo, chờ xác nhận xuất kho' },
@@ -48,6 +49,9 @@ export default async function TransferDetailPage({ params }: { params: Promise<{
           </div>
           <p className="text-sm text-gray-500 mt-0.5">{cfg.description}</p>
         </div>
+        {['pending', 'cancelled'].includes(order.status) && (
+          <DeleteTransferButton orderId={id} />
+        )}
       </div>
 
       {/* Thông tin phiếu */}

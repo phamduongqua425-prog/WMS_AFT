@@ -46,3 +46,12 @@ export async function createStocktake(formData: FormData) {
   revalidatePath('/stocktakes')
   redirect(`/stocktakes/${stocktake.id}`)
 }
+
+export async function deleteStocktake(id: string) {
+  const supabase = createAdminClient()
+  // stocktake_items cascade delete via FK
+  const { error } = await supabase.from('stocktakes').delete().eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath('/stocktakes')
+  redirect('/stocktakes')
+}

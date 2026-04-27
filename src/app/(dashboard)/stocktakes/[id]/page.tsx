@@ -6,6 +6,7 @@ import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import { ArrowLeft, CheckCircle2, Clock } from 'lucide-react'
 import Link from 'next/link'
+import { DeleteStocktakeButton } from './delete-button'
 
 export default async function StocktakeDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -53,6 +54,7 @@ export default async function StocktakeDetailPage({ params }: { params: Promise<
             {stocktake.submitted_at && ` · Nộp lúc ${format(new Date(stocktake.submitted_at), 'HH:mm dd/MM/yyyy', { locale: vi })}`}
           </p>
         </div>
+        <DeleteStocktakeButton id={stocktake.id} />
       </div>
 
       {/* Tóm tắt */}

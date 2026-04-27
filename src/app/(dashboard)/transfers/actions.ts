@@ -125,3 +125,21 @@ export async function cancelTransfer(orderId: string) {
   revalidatePath(`/transfers/${orderId}`)
   revalidatePath('/transfers')
 }
+
+export async function deleteTransfer(orderId: string) {
+  const supabase = createAdminClient()
+  // Only allow delete for cancelled/pending (no stock movements committed)
+  const { data: order } = await supabase
+    .from('transfer_orders')
+    .select('status')
+    .eq('id', orderId)
+    .single()
+
+  if (!order || !['cancelled', 'pending'].includes(order.status)) {
+    throw new Error('Chỉ có thể xóa phiếu đã hủy hoặc chờ xử lý')
+  }
+
+  await supabase.from('transfer_orders').delete().eq('id', orderId)
+  revalidatePath('/transfers')
+  redirect('/transfers')
+}
